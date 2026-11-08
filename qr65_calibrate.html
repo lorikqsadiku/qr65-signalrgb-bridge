@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR65 Color Calibration</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0;
+    --ok: #1f8a4c; --warn: #b26b00; --bad: #c0392b; --accent: #2f5bd3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1d1d20; --text: #ececee; --muted: #9a9aa2; --line: #2e2e33;
+      --ok: #4cc27f; --warn: #e0a040; --bad: #ef6b5b; --accent: #7a9cff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+  .status { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .status.connected .dot { background: var(--ok); }
+  .status.searching .dot { background: var(--warn); }
+  .status.asleep .dot, .status.offline .dot { background: var(--bad); }
+  .hint { color: var(--muted); font-weight: 400; margin-top: 6px; }
+  .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .swatch { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .swatch .chip { height: 64px; background: #000; }
+  .swatch .lbl { padding: 8px 10px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .swatch .lbl b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  .row { display: grid; grid-template-columns: 74px 1fr 56px; align-items: center; gap: 12px; padding: 6px 0; }
+  .row label { font-weight: 600; }
+  .row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  input[type=range] { width: 100%; }
+  .r label { color: #d23b3b; } .g label { color: #2e9b47; } .b label { color: #3b6fe0; }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  #saved { color: var(--muted); font-size: 13px; }
+  ol { margin: 0; padding-left: 20px; } li { margin: 4px 0; }
+  @media (max-width: 520px) { .swatches { grid-template-columns: 1fr; } .row { grid-template-columns: 60px 1fr 48px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>QR65 Color Calibration</h1>
+  <p class="sub">Match the speaker's lights to your other RGB components. Changes apply live and are saved automatically.</p>
+
+  <section class="panel">
+    <div id="status" class="status offline"><span class="dot"></span><span id="statusText">Connecting to bridge…</span></div>
+    <div id="statusHint" class="hint"></div>
+  </section>
+
+  <section class="panel swatches">
+    <div class="swatch"><div id="inChip" class="chip"></div><div class="lbl">From SignalRGB <b id="inVal">–</b></div></div>
+    <div class="swatch"><div id="outChip" class="chip"></div><div class="lbl">Sent to speaker <b id="outVal">–</b></div></div>
+  </section>
+
+  <section class="panel">
+    <h2>Channel strength (white balance)</h2>
+    <div class="row r"><label for="gain0">Red</label><input id="gain0" type="range" min="0" max="100" step="1"><output id="gain0v"></output></div>
+    <div class="row g"><label for="gain1">Green</label><input id="gain1" type="range" min="0" max="100" step="1"><output id="gain1v"></output></div>
+    <div class="row b"><label for="gain2">Blue</label><input id="gain2" type="range" min="0" max="100" step="1"><output id="gain2v"></output></div>
+  </section>
+
+  <section class="panel">
+    <h2>Gamma (mixed colors &amp; midtones)</h2>
+    <div class="row r"><label for="gamma0">Red</label><input id="gamma0" type="range" min="0.5" max="3" step="0.05"><output id="gamma0v"></output></div>
+    <div class="row g"><label for="gamma1">Green</label><input id="gamma1" type="range" min="0.5" max="3" step="0.05"><output id="gamma1v"></output></div>
+    <div class="row b"><label for="gamma2">Blue</label><input id="gamma2" type="range" min="0.5" max="3" step="0.05"><output id="gamma2v"></output></div>
+    <div class="actions" style="margin-top:10px">
+      <button id="reset" type="button">Reset to neutral</button>
+      <span id="saved"></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>How to match</h2>
+    <ol>
+      <li>In SignalRGB pick the <b>Solid Color</b> effect.</li>
+      <li>Set it to <b>white</b>. If the speaker looks bluish, lower <b>Blue strength</b>; greenish, lower Green; pinkish, lower Red, until its white matches your other components.</li>
+      <li>Try <b>red</b>, <b>green</b> and <b>blue</b>; each should look like the others.</li>
+      <li>Try mixed colors like <b>orange</b>, <b>purple</b> or <b>teal</b>. If they lean towards one channel, raise that channel's <b>gamma</b> a little (above 1 = that channel weaker in mixes).</li>
+    </ol>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const gainEls = [0, 1, 2].map((i) => $("gain" + i));
+  const gammaEls = [0, 1, 2].map((i) => $("gamma" + i));
+  let dragging = false, saveTimer = null, loaded = false;
+
+  function show(cal) {
+    cal.gain.forEach((v, i) => { gainEls[i].value = Math.round(v * 100); $("gain" + i + "v").textContent = Math.round(v * 100) + "%"; });
+    cal.gamma.forEach((v, i) => { gammaEls[i].value = v; $("gamma" + i + "v").textContent = Number(v).toFixed(2); });
+  }
+  function current() {
+    return { gain: gainEls.map((e) => Number(e.value) / 100), gamma: gammaEls.map((e) => Number(e.value)) };
+  }
+  async function save() {
+    try {
+      const res = await fetch("/calibration", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(current()) });
+      $("saved").textContent = res.ok ? "Saved" : "Not saved: " + (await res.json()).error;
+    } catch (e) { $("saved").textContent = "Not saved: bridge not reachable"; }
+    saveTimer = null;  // lets polling refresh the sliders again
+  }
+  function changed() {
+    show(current());
+    $("saved").textContent = "Saving…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 120);
+  }
+  [...gainEls, ...gammaEls].forEach((el) => {
+    el.addEventListener("input", changed);
+    el.addEventListener("pointerdown", () => (dragging = true));
+    el.addEventListener("pointerup", () => (dragging = false));
+  });
+  $("reset").addEventListener("click", () => { show({ gain: [1, 1, 1], gamma: [1, 1, 1] }); changed(); });
+
+  function paint(chip, val, c) {
+    if (!c) { chip.style.background = "#000"; val.textContent = "–"; return; }
+    chip.style.background = `rgb(${c.r},${c.g},${c.b})`;
+    val.textContent = `${c.r}, ${c.g}, ${c.b}`;
+  }
+  const STATES = {
+    connected: ["Connected to speaker", ""],
+    searching: ["Looking for the speaker…", "Reconnecting. This usually takes a few seconds."],
+    asleep: ["Speaker's Bluetooth is asleep", "Press the speaker's input button twice (USB → Bluetooth → USB). It reconnects by itself."],
+  };
+  async function poll() {
+    try {
+      const s = await (await fetch("/status", { cache: "no-store" })).json();
+      const [text, hint] = STATES[s.state] || [s.state, ""];
+      $("status").className = "status " + s.state;
+      $("statusText").textContent = text;
+      $("statusHint").textContent = hint;
+      paint($("inChip"), $("inVal"), s.last_color);
+      paint($("outChip"), $("outVal"), s.sent_color);
+      if (!loaded) { show(s.calibration); loaded = true; }
+      else if (!dragging && !saveTimer) { show(s.calibration); }
+    } catch (e) {
+      $("status").className = "status offline";
+      $("statusText").textContent = "Bridge not running";
+      $("statusHint").textContent = "Start it with the \"QR65 BLE Bridge\" scheduled task.";
+    }
+  }
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>

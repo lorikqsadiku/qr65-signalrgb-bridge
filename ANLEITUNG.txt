@@ -1,0 +1,82 @@
+EDIFIER QR65 + SIGNALRGB  -  RGB-SYNC
+=====================================
+
+Damit leuchtet die RGB-Beleuchtung deiner Edifier QR65 synchron zu deinen anderen
+RGB-Komponenten in SignalRGB - egal ob die Lautsprecher per USB oder Bluetooth Musik spielen.
+
+Inoffizielles Hobby-Projekt, nicht von Edifier oder SignalRGB. Nutzung auf eigene Gefahr.
+
+
+VORAUSSETZUNGEN
+---------------
+- Windows 10 oder 11 mit Bluetooth (Bluetooth LE / 4.0 oder neuer)
+- SignalRGB (https://signalrgb.com)
+- Python 3.10 oder neuer: https://www.python.org/downloads/
+  WICHTIG: Beim Installieren "Add python.exe to PATH" anhaken.
+- Die QR65 muss NICHT mit Windows gekoppelt sein. Admin-Rechte werden nicht benoetigt.
+
+
+INSTALLATION (einmalig, ca. 5 Minuten)
+--------------------------------------
+1. Die ZIP an einen festen Ort entpacken, z. B.  Dokumente\QR65-SignalRGB-Bridge
+   Den Ordner danach nicht mehr verschieben - der Autostart zeigt auf diesen Ordner.
+
+2. SignalRGB beenden (Rechtsklick auf das SignalRGB-Symbol unten rechts -> Exit).
+
+3. Die QR65 einschalten und mit der Eingangs-Taste in den BLUETOOTH-Modus schalten.
+   Nur in diesem Moment ist der Lautsprecher fuer den PC auffindbar.
+
+4. Doppelklick auf  install.cmd  und den Anweisungen im Fenster folgen.
+   Das Skript installiert die benoetigten Python-Pakete, kopiert das SignalRGB-Plugin,
+   sucht deine QR65, richtet den Autostart ein und startet die Bridge.
+
+5. SignalRGB starten. Unter "Geraete" erscheint "Edifier QR65".
+   Im Layout an die gewuenschte Stelle ziehen.
+
+6. Fertig. Du kannst die QR65 jetzt wieder auf USB umschalten - die Lichter bleiben synchron.
+
+
+FARBEN ANPASSEN (empfohlen)
+---------------------------
+Die LEDs der QR65 sehen ab Werk anders aus als andere RGB-Hardware. Im Browser oeffnen:
+
+    http://127.0.0.1:5297/calibrate
+
+1. In SignalRGB den Effekt "Solid Color" auf WEISS stellen.
+2. Mit den Reglern "Channel strength" angleichen, bis das Weiss gleich aussieht
+   (zu blaeulich -> Blau runter, zu gruenlich -> Gruen runter, zu rosa -> Rot runter).
+3. Rot, Gruen, Blau und Mischfarben (Orange, Lila, Tuerkis) pruefen.
+   Fuer Mischfarben die "Gamma"-Regler verwenden.
+Alles wird automatisch gespeichert.
+Tipp: Bei der QR65 des Autors passte  Rot 100 % / Gruen 54 % / Blau 54 % (Gamma 1,00)
+- ein guter Startpunkt.
+
+
+IM ALLTAG
+---------
+- Laeuft automatisch: PC-Neustart, Standby, Wechsel zwischen USB und Bluetooth.
+- EINE Ausnahme: Wird die QR65 aus- und wieder eingeschaltet (Schalter oder Stromausfall) und
+  startet dabei im USB-Modus, ist ihr Bluetooth komplett aus - das kann kein PC aufwecken.
+  Du bekommst dann eine Windows-Benachrichtigung. Einfach die Eingangs-Taste ZWEIMAL druecken
+  (USB -> Bluetooth -> USB). Nach ein paar Sekunden ist der Sync wieder da.
+- Ist "Nicht stoeren" aktiv, landet die Benachrichtigung nur im Benachrichtigungscenter (Win+N).
+  Soll sie trotzdem aufpoppen: Einstellungen -> System -> Benachrichtigungen ->
+  Prioritaetsbenachrichtigungen festlegen -> "Windows PowerShell" hinzufuegen.
+
+
+PROBLEME?
+---------
+- Status ansehen:   http://127.0.0.1:5297/status
+    "state": "connected" = verbunden, "searching" = sucht, "asleep" = Taste zweimal druecken
+- Bridge neu starten:  Doppelklick auf  restart.cmd
+- Protokoll:  qr65_bridge.log  in diesem Ordner
+- Bluetooth am PC muss eingeschaltet sein.
+- Lautsprecher taucht in SignalRGB nicht auf: SignalRGB einmal neu starten.
+- Falsches Geraet gefunden (z. B. Edifier-Kopfhoerer)? In  qr65_config.json  bei
+  "device_address" den Wert leeren ("") und restart.cmd ausfuehren, waehrend nur die QR65
+  im Bluetooth-Modus ist.
+
+
+DEINSTALLIEREN
+--------------
+Doppelklick auf  uninstall.cmd , SignalRGB neu starten, danach diesen Ordner loeschen.

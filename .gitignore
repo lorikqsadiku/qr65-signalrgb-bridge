@@ -1,0 +1,8 @@
+# Created on each install - personal (speaker address, color calibration) or runtime only
+qr65_config.json
+qr65_config.json.tmp
+*.log
+*.log.*
+*.pid
+__pycache__/
+*.pyc
